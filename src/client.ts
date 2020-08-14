@@ -135,15 +135,16 @@ export default class Client extends EventEmitter {
       });
       await Promise.all(this.localStreams.map(async (localStream) => {
         if (localStream.mid) {
-          await localStream.unpublish(this.roomToken);
+          localStream.close()
         }
       }));
       this.localStreams = []
       await Promise.all(Object.values(this.streams).map(async (stream) => {
         if (stream.mid) {
-          stream.unsubscribe();
+          stream.close()
         }
       }))
+      this.streams = {}
       this.knownStreams.clear();
       log.info('leave success: result => ' + JSON.stringify(data));
     } catch (error) {
@@ -174,18 +175,18 @@ export default class Client extends EventEmitter {
         break;
       }
       case 'stream-add': {
-        const { mid, info, tracks, description } = data;
+        const { mid, uid, info, tracks, description } = data;
         if (mid) {
           const trackMap: Map<string, TrackInfo[]> = objToStrMap(tracks);
           this.knownStreams.set(mid, trackMap);
         }
-        this.emit('stream-add', mid, info, description);
+        this.emit('stream-add', mid, uid, info, description);
         break;
       }
       case 'stream-remove': {
-        const { mid } = data;
+        const { uid, mid } = data;
         const stream = this.streams[mid!];
-        this.emit('stream-remove', stream);
+        this.emit('stream-remove', stream, uid);
         stream.close();
         break;
       }
