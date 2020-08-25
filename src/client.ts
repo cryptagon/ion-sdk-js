@@ -133,26 +133,32 @@ export default class Client extends EventEmitter {
         uid: this.uid,
         ...(this.roomToken ? {token: this.roomToken} : {}),
       });
-      await Promise.all(this.localStreams.map(async (localStream) => {
-        if (localStream.mid) {
-          localStream.close()
-        }
-      }));
-      this.localStreams = []
-      await Promise.all(Object.values(this.streams).map(async (stream) => {
-        if (stream.mid) {
-          stream.close()
-        }
-      }))
-      this.streams = {}
-      this.knownStreams.clear();
       log.info('leave success: result => ' + JSON.stringify(data));
     } catch (error) {
       log.error('leave reject: error =>' + error);
     }
+    await close()
   }
 
-  close() {
+  async close() {
+    try {
+      await Promise.all(this.localStreams.map(async (localStream) => {
+        if (localStream.mid) {
+          localStream.close();
+        }
+      }));
+      await Promise.all(Object.values(this.streams).map(async (stream) => {
+        if (stream.mid) {
+          stream.close();
+        }
+      }))
+    } catch (error) {
+      log.error('close error => '+error);
+    } 
+    this.localStreams = [];
+    this.streams = {};
+    this.knownStreams.clear();
+    this.removeAllListeners()
     this.dispatch.close();
   }
 
