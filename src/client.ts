@@ -57,12 +57,17 @@ export default class Client extends EventEmitter {
 
     this.dispatch.on('disconnected', () => {
       log.info('Peer "disconnected" event');
-      this.emit('transport-failed');
+      this.emit('transport-disconnected');
     });
 
     this.dispatch.on('close', () => {
       log.info('Peer "close" event');
       this.emit('transport-closed');
+    });
+
+    this.dispatch.on('failed', (currentAttempt: number) => {
+      log.info('Peer "failed" event');
+      this.emit('transport-failed', currentAttempt)
     });
 
     this.dispatch.on('request', this.onRequest);
@@ -93,7 +98,7 @@ export default class Client extends EventEmitter {
       log.info('join success: result => ' + JSON.stringify(data));
     } catch (error) {
       log.error('join reject: error =>' + error);
-      throw error  
+      throw error
     }
   }
 

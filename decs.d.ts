@@ -5,6 +5,7 @@ declare module 'protoo-client' {
     origin?: string;
     headers?: http.OutgoingHttpHeaders;
     requestOptions?: object;
+    retry?: object;
   }
   export class WebSocketTransport {
     constructor(url: string, options?: ProtooOptions);
