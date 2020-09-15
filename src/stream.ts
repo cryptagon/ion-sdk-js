@@ -231,8 +231,6 @@ export class LocalStream extends Stream {
         delete this.mid;
       });
   }
-
-
 }
 
 export class RemoteStream extends Stream {
