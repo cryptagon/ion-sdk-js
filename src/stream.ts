@@ -51,7 +51,10 @@ export class Stream extends MediaStream {
       delete this.transport;
     }
   }
-
+  
+  getIceConnectionState(): RTCIceConnectionState | undefined {
+    return this.transport?.getPeerConnection().iceConnectionState;
+  }
 }
 
 export class LocalStream extends Stream {
@@ -94,6 +97,8 @@ export class LocalStream extends Stream {
 
     return new LocalStream(stream, options);
   }
+
+  public onStreamConnectionStateChange: ((mid: string, connected: boolean) => void) | undefined;
 
   options: StreamOptions;
   constructor(stream: MediaStream, options: StreamOptions) {
@@ -197,7 +202,13 @@ export class LocalStream extends Stream {
       log.info('negotiation needed');
     };
     this.transport.oniceconnectionstatechange = async () => {
-      log.debug('Ice connection state for sender changed to: '+this.transport?.getPeerConnection().iceConnectionState)
+      const state = this.transport?.getPeerConnection()?.iceConnectionState || undefined;
+      if (state) {
+        log.debug('Ice connection state for sender changed to: '+state);
+        if (this.onStreamConnectionStateChange && this.mid) {
+          this.onStreamConnectionStateChange(this.mid, !(["closed", "disconnected", "failed"].includes(state)))
+        }
+      }
     }
   }
 
@@ -220,6 +231,8 @@ export class LocalStream extends Stream {
         delete this.mid;
       });
   }
+
+
 }
 
 export class RemoteStream extends Stream {

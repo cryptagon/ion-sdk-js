@@ -167,6 +167,25 @@ export default class Client extends EventEmitter {
     this.dispatch.close();
   }
 
+  isStreamIceConnected = (local: boolean) => {
+    let connected = true;
+    const failedStatuses = ["closed", "disconnected", "failed"]
+    const streams = local ? this.localStreams as Stream[] : Object.values(this.streams) as Stream[];
+    streams.forEach(stream => {
+      const state = stream.getIceConnectionState();
+      if (state) {
+        connected = connected && !failedStatuses.includes(state);
+      } else {
+        log.warn("Ice connection state is invalid")
+      }
+    })
+    return connected
+  }
+
+  streamsConnected() {
+    return this.isStreamIceConnected(true) && this.isStreamIceConnected(false)
+  }
+
   private onRequest = (request: Request) => {
     log.debug('Handle request from server: [method:%s, data:%o]', request.method, request.data);
   };
