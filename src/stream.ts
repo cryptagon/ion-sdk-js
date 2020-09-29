@@ -204,7 +204,7 @@ export class LocalStream extends Stream {
     this.transport.oniceconnectionstatechange = async () => {
       const state = this.transport?.getPeerConnection()?.iceConnectionState || undefined;
       if (state) {
-        log.debug('Ice connection state for sender changed to: '+state);
+        log.debug(`Ice connection state for sender ${this.mid} changed to: ${state}`);
         if (this.onStreamConnectionStateChange && this.mid) {
           this.onStreamConnectionStateChange(this.mid, !(["closed", "disconnected", "failed"].includes(state)))
         }
