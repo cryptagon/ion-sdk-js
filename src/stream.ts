@@ -274,7 +274,7 @@ export class RemoteStream extends Stream {
       }
     };
     transport.oniceconnectionstatechange = async () => {
-      log.debug('Ice connection state for receiver changed to: '+ transport?.getPeerConnection().iceConnectionState)
+      log.debug(`Ice connection state for receiver ${mid} changed to: ${transport?.getPeerConnection().iceConnectionState}`)
     };
     const stream: MediaStream = await new Promise(async (resolve, reject) => {
       try {

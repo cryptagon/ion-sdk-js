@@ -177,6 +177,7 @@ export default class Client extends EventEmitter {
         connected = connected && !failedStatuses.includes(state);
       } else {
         log.warn("Ice connection state is invalid")
+        connected = false
       }
     })
     return connected
@@ -218,6 +219,7 @@ export default class Client extends EventEmitter {
         const stream = this.streams[mid!];
         this.emit('stream-remove', stream, uid);
         stream.close();
+        delete this.streams[mid!]
         break;
       }
       case 'broadcast': {
