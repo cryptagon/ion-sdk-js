@@ -5,7 +5,7 @@ import * as log from 'loglevel';
 
 import { LocalStream, RemoteStream, Stream } from './stream';
 import WebRTCTransport from './transport';
-import { TrackInfo, Notification } from './proto';
+import { TrackInfo, Notification, MediaStreamInfo } from './proto';
 
 interface Config {
   url: string;
@@ -96,6 +96,18 @@ export default class Client extends EventEmitter {
         ...(token ? {token} : {}),
       });
       log.info('join success: result => ' + JSON.stringify(data));
+      if (data.pubs) {
+        const pubs = data.pubs as MediaStreamInfo[]
+        pubs.forEach(pub => {
+          const { mid, uid, info, tracks, description } = pub;
+          if (mid) {
+            const trackMap: Map<string, TrackInfo[]> = objToStrMap(tracks);
+            this.knownStreams.set(mid, trackMap);
+            this.emit('stream-add', mid, uid, info, description);
+          }
+        })
+        
+      }
     } catch (error) {
       log.error('join reject: error =>' + error);
       throw error

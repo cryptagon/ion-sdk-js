@@ -7,14 +7,17 @@ export interface TrackInfo {
   fmtp?: string;
 }
 
+export interface MediaStreamInfo  {
+  rid: string;
+  mid?: string;
+  uid: string;
+  info?: string;
+  tracks?: { [name: string]: TrackInfo };
+  description?: string;
+}
+
 export interface Notification {
   method: string;
-  data: {
-    rid: string;
-    mid?: string;
-    uid: string;
-    info?: string;
-    tracks?: { [name: string]: TrackInfo };
-    description?: string;
-  };
+  data: MediaStreamInfo;
 }
+
