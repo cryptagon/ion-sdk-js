@@ -1,6 +1,6 @@
 {
   "name": "@tandemchat/ion-sdk-js",
-  "version": "0.4.1-beta.9",
+  "version": "0.4.1-beta.10",
   "description": "A js sdk for ion sfu",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",

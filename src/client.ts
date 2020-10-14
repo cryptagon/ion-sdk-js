@@ -99,11 +99,11 @@ export default class Client extends EventEmitter {
       if (data.pubs) {
         const pubs = data.pubs as MediaStreamInfo[]
         pubs.forEach(pub => {
-          const { mid, uid, info, tracks, description } = pub;
+          const { mid, uid, info: inf, tracks, description } = pub;
           if (mid) {
             const trackMap: Map<string, TrackInfo[]> = objToStrMap(tracks);
             this.knownStreams.set(mid, trackMap);
-            this.emit('stream-add', mid, uid, info, description);
+            this.emit('stream-add', mid, uid, inf, description);
           }
         })
         
