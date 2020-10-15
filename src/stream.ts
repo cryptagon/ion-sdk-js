@@ -23,6 +23,7 @@ export interface StreamOptions extends MediaStreamConstraints {
   description?: string;
 }
 
+
 export class Stream extends MediaStream {
   static dispatch: Peer;
   static setDispatch(dispatch: Peer) {
@@ -98,7 +99,7 @@ export class LocalStream extends Stream {
     return new LocalStream(stream, options);
   }
 
-  public onStreamConnectionStateChange: ((mid: string, connected: boolean) => void) | undefined;
+  public onLocalConnectionStateChange: ((mid: string, connected: boolean) => void) | undefined;
 
   options: StreamOptions;
   constructor(stream: MediaStream, options: StreamOptions) {
@@ -205,8 +206,12 @@ export class LocalStream extends Stream {
       const state = this.transport?.getPeerConnection()?.iceConnectionState || undefined;
       if (state) {
         log.debug(`Ice connection state for sender ${this.mid} changed to: ${state}`);
-        if (this.onStreamConnectionStateChange && this.mid) {
-          this.onStreamConnectionStateChange(this.mid, !(["closed", "disconnected", "failed"].includes(state)))
+        if (this.onLocalConnectionStateChange && this.mid) {
+          if (state === "connected") {
+            this.onLocalConnectionStateChange(this.mid, true)
+          } else if (["closed", "disconnected", "failed"].includes(state)) {
+            this.onLocalConnectionStateChange(this.mid, false)
+          }
         }
       }
     }
@@ -234,15 +239,23 @@ export class LocalStream extends Stream {
 }
 
 export class RemoteStream extends Stream {
+  props?: any
+
   constructor(stream: MediaStream) {
     super(stream);
     Object.setPrototypeOf(this, RemoteStream.prototype);
   }
+
+  public onRemoteConnectionStateChange: ((mid: string, connected: boolean) => void) | undefined;
+
   static async getRemoteMedia(rid: string, mid: string, tracks: Map<string, TrackInfo[]>, token?: string) {
     const allTracks = Array.from(tracks.values()).flat();
     const audio = allTracks.map((t) => t.type.toLowerCase() === 'audio').includes(true);
     const video = allTracks.map((t) => t.type.toLowerCase() === 'video').includes(true);
     let sendOffer = true;
+    const props = {
+      subId: ""
+    }
     log.debug('Creating receiver => %s', mid);
     const transport = new WebRTCTransport();
     if (audio) {
@@ -268,14 +281,13 @@ export class RemoteStream extends Stream {
           mid,
           ...(token ? {token} : {}),
         });
-        log.info(`subscribe success => result(mid: ${result!.mid})`);
+        props.subId = result!.mid 
+        log.info(`subscribe success => result(mid: ${props.subId})`);
         log.debug('Got answer => %o', result?.jsep);
         await transport.setRemoteDescription(result?.jsep);
       }
     };
-    transport.oniceconnectionstatechange = async () => {
-      log.debug(`Ice connection state for receiver ${mid} changed to: ${transport?.getPeerConnection().iceConnectionState}`)
-    };
+
     const stream: MediaStream = await new Promise(async (resolve, reject) => {
       try {
         transport.ontrack = ({ track, streams }: RTCTrackEvent) => {
@@ -296,7 +308,21 @@ export class RemoteStream extends Stream {
     });
 
     const remote = new RemoteStream(stream);
+    remote.props = props
     remote.transport = transport;
+    remote.transport.oniceconnectionstatechange = async () => {
+      log.debug('Ice connection state for receiver changed to: '+ transport?.getPeerConnection().iceConnectionState)
+      const state = transport?.getPeerConnection()?.iceConnectionState || undefined;
+      if (state && remote) {
+        if (remote.onRemoteConnectionStateChange && mid) {
+          if (state === "connected") {
+            remote.onRemoteConnectionStateChange(mid, true)
+          } else if (["closed", "disconnected", "failed"].includes(state)) {
+            remote.onRemoteConnectionStateChange(mid, false)
+          }
+        }
+      }
+    };
     remote.mid = mid;
     remote.rid = rid;
     return remote;
@@ -306,8 +332,8 @@ export class RemoteStream extends Stream {
     if (!this.transport) {
       throw new Error('Stream is not subscribed.');
     }
-    log.info('unsubscribe mid => %s', this.mid);
+    log.info('unsubscribe mid => %s, subId => %s', this.mid, this.props.subId);
     this.close();
-    return await this.dispatch.request('unsubscribe', { mid: this.mid });
+    return await this.dispatch.request('unsubscribe', { mid: this.props.subId });
   }
 }
