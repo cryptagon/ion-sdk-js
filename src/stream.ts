@@ -30,11 +30,9 @@ export class Stream extends MediaStream {
     Stream.dispatch = dispatch;
   }
 
-
   mid?: string;
   rid?: string;
   transport?: WebRTCTransport;
-
 
   get dispatch(): Peer {
     if (!Stream.dispatch) {
