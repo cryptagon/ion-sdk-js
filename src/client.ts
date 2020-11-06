@@ -154,7 +154,7 @@ export default class Client extends EventEmitter {
     } catch (error) {
       log.error('leave reject: error =>' + error);
     }
-    await close()
+    await this.close()
   }
 
   async close() {
